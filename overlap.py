@@ -24,7 +24,7 @@ if __name__ == "__main__":
 	pore_xv, pore_yv = np.meshgrid(x, y)
 
 	# a bunch of values for rotation angle (positive values mean counterclockwise rotation from horizontal)
-	angle_vals = np.linspace(0.,0.5*np.pi)
+	angle_vals = np.linspace(0.,0.5*np.pi,51)
 
 	# initial slit coordinates (slit is revolving)
 	x = np.linspace(1., 10., discretization) # x domain 
@@ -38,29 +38,29 @@ if __name__ == "__main__":
 	fig, axs = plt.subplots(1,1)
 	camera = Camera(fig)
 
-	for angle in angle_vals:
-
+	for counter, angle in enumerate(angle_vals):
+	#for counter in range(18,19):
+		angle = angle_vals[counter] 
 		# have to replot the pore for every animation snapshot
 		axs.plot( pore_xv, pore_yv, 'r-' )
 
 		# overlap is the percentage of slit coordinates that falls within the pore extents
 		overlap = 0.
 
-		# the i loop below rotates the "lines" that the slit consists of
+		# the i loop below rotates each "line" that the slit consists of
 		# would be great to vectorize this code
 		for i in range(slit_xv.shape[0]):
 
+			# apply the rotation matrix to a "line" in the "slit"
 			slit_line_coords = np.dot(rotation_mat( angle ), np.array([slit_xv[i,:],slit_yv[i,:]]))
+			# plot the rotated "line"
 			axs.plot( slit_line_coords[0,:], slit_line_coords[1,:], 'b' )
 
 			# calculate the overlap of the slit "line" with the pore
-			# compare slit "line" x coordinates to pore extents in the x domain
-			overlap_x = np.float( np.sum( (slit_line_coords[0,:] > pxi) & (slit_line_coords[0,:] < pxf) ) ) 
-			# compare slit "line" y coordinates to pore extents in the y domain
-			overlap_y = np.float( np.sum( (slit_line_coords[1,:] > pyi) & (slit_line_coords[1,:] < pyf) ) ) 
-			if overlap_x > 0 and overlap_y > 0:
-				# add the number of (x,y) coordinates in the slit "line" that are within the confines of the pore
-				overlap += np.min( [overlap_x, overlap_y] )
+			for j in range(slit_line_coords.shape[1]):
+				if slit_line_coords[0,j] >= pxi and slit_line_coords[0,j] <= pxf and slit_line_coords[1,j] >= pyi and slit_line_coords[1,j] <= pyf:
+					# add the number of (x,y) coordinates in the slit "line" that are within the confines of the pore
+					overlap += 1
 
 		overlap /= elements 
 		overlap *= 100.0 # convert to percentage
@@ -71,7 +71,7 @@ if __name__ == "__main__":
 		axs.axis('equal')
 		
 		# monitor the rotation angle and the overlap
-		print(np.round(angle/2/np.pi*360,2), np.round(overlap,2))
+		print(counter, np.round(angle/2/np.pi*360,2), np.round(overlap,2))
 		camera.snap()
 
 	animation = camera.animate()
